@@ -1,0 +1,89 @@
+#include "pch.h"
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int N;
+
+int main()
+{
+	setlocale(LC_ALL, "Russian");
+	cout << "Введите количество функций" << endl;
+	cin >> N;
+	for (int i = 0; i < N; i++) {
+		cout << "m" << i + 1 << "*x1 + " << "n" << i + 1 << "*x2 <= b" << i + 1 << endl;
+	}
+	vector<vector<double>> SimTab(N + 1, vector <double>(N + 3));
+	vector<int> Base(N);
+	for (int i = 0; i < N; i++) Base[i] = i + 2;
+	//Заполнение симплекс таблицы
+	for (int i = 0; i < N; i++) {
+		//cout << "Введите коэффициенты m" << i + 1 << ", n" << i + 1 << ", b" << i + 1 << endl;
+		//cin >> SimTab[i][0] >> SimTab[i][1] >> SimTab[i][2*N - 1];
+		SimTab[i][0] = rand() % 11 - 5;
+		SimTab[i][1] = rand() % 11 - 5;
+		SimTab[i][N + 3 - 1] = rand() % 6 + 1;
+		SimTab[i][i+2] = 1;
+	}
+	//cout << "Введите коэффициенты m, n для целевой функции" << endl;
+	//cin >> SimTab[N][0] >> SimTab[N][1];
+	SimTab[N][0] = rand() % 6 - 6;
+	SimTab[N][1] = rand() % 6 - 6;
+
+	cout << "Начальная симплекс таблица:" << endl;
+	for (int i = 0; i < N + 1; i++) {
+		for(int j = 0; j < N + 3; j++)
+			cout << SimTab[i][j] << ' ';
+		cout << endl;
+	}
+	int k = 1;
+	while (true) {
+		
+		//Поиск ведущего столбца
+		int col = 0;
+		for (int i = 1; i < N + 3; i++)
+			if (SimTab[N][i] < SimTab[N][col])
+				col = i;
+
+		//Поиск ведущей строки
+		int row = 0;
+		while (SimTab[row][col] < 1e-5 || SimTab[row][N + 3 - 1] < 1e-5 ||
+			SimTab[row][col] * SimTab[row][N + 3 - 1] < 0)
+			row++;
+
+		for (int i = row; i < N; i++)
+			if (abs(SimTab[i][N + 3 - 1]) > 1e-5 && abs(SimTab[i][col]) > 1e-5 && SimTab[i][N + 3 - 1] / SimTab[i][col] > 0 &&
+				SimTab[i][N + 3 - 1] / SimTab[i][col] < SimTab[row][N + 3 - 1] / SimTab[row][col])
+				row = i;
+
+		Base[row] = col + 1;
+
+		double value = SimTab[row][col];
+		for (int i = 0; i < N + 3; i++)
+			SimTab[row][i] /= value;
+
+		for (int i = 0; i < N + 1; i++) {
+			if (i != row) {
+				double x = SimTab[i][col];
+				for (int j = 0; j < N + 3; j++)
+					SimTab[i][j] -= SimTab[row][j] * x;
+			}
+		}
+		cout << endl << "Симплекс таблица на " << k << "-й итерации:" << endl;
+		for (int i = 0; i < N + 1; i++) {
+			for (int j = 0; j < N + 3; j++)
+				cout << SimTab[i][j] << ' ';
+			cout << endl;
+		}
+		cout << "Базис на " << k << "-й итерации:" << endl;
+		for (int i = 0; i < N; i++) cout << Base[i] << "  ";
+		cout << endl;
+
+		bool flag = true;
+		for (int i = 0; i < N + 3 - 1; i++)
+			if (SimTab[N][i] < 0) flag = false;
+		if (flag) break;
+		k++;
+	}
+	return 0;
+}
